@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performance por Categoria</title>
+<meta name="description" content="Análise de performance por categoria de uma rede de supermercados fictícia: resumo de quedas, variação por nível, ruptura e produtos. Portfólio de Jonatas Menezes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+:root{
+  --bg:#f4f4f2; --surface:#fdfdfc; --sunk:#efefec; --ink:#18181b; --ink-2:#52525b; --muted:#80808a; --line:#e2e2df;
+  --accent:#2f54c9; --accent-soft:rgba(47,84,201,.09); --up:#1d7a3e; --down:#c0392b; --warn:#a85d00; --warn-soft:rgba(168,93,0,.1);
+  --r:14px; --shadow:0 1px 2px rgba(24,24,27,.04),0 8px 24px -12px rgba(24,24,27,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e0e10; --surface:#17171a; --sunk:#1f1f23; --ink:#ededf0; --ink-2:#a8a8b0; --muted:#74747c; --line:#2a2a2f;
+    --accent:#7a95f2; --accent-soft:rgba(122,149,242,.12); --up:#4cc27a; --down:#f07167; --warn:#f0a63a; --warn-soft:rgba(240,166,58,.12);
+    --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e0e10; --surface:#17171a; --sunk:#1f1f23; --ink:#ededf0; --ink-2:#a8a8b0; --muted:#74747c; --line:#2a2a2f;
+  --accent:#7a95f2; --accent-soft:rgba(122,149,242,.12); --up:#4cc27a; --down:#f07167; --warn:#f0a63a; --warn-soft:rgba(240,166,58,.12);
+  --shadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Geist",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 16px 56px}
+button,select{font:inherit;color:inherit}
+/* topo */
+.top{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;margin-bottom:22px}
+.brand{display:flex;gap:12px;align-items:center}
+.mark{width:38px;height:38px;border-radius:11px;background:var(--accent);color:var(--surface);display:grid;place-items:center;font-weight:600;font-size:15px;letter-spacing:-.02em}
+h1{font-size:26px;line-height:1.15;font-weight:600;letter-spacing:-.025em;margin:0}
+.sub{color:var(--ink-2);font-size:14px;margin:2px 0 0}
+.filtros{display:flex;gap:10px;flex-wrap:wrap}
+.campo{display:grid;gap:4px}
+.campo label{font-size:12px;color:var(--ink-2)}
+select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 32px 8px 11px;font-size:14px;appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;min-width:150px}
+select:focus-visible,button:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.icon-btn{align-self:end;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;font-size:17px;color:var(--ink-2)}
+.icon-btn:active{transform:scale(.97)}
+/* resumo */
+.resumo{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;margin-bottom:16px}
+.painel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.hero{padding:24px 26px}
+.hero .mes{font-size:13px;color:var(--ink-2)}
+.hero .valor{font-size:46px;font-weight:600;letter-spacing:-.04em;line-height:1.05;margin:4px 0 14px}
+.comp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.comp div{background:var(--sunk);border-radius:10px;padding:10px 12px}
+.comp .lb{font-size:12px;color:var(--ink-2)}
+.comp .v{font-size:18px;font-weight:500}
+.comp .rs{font-size:12px;color:var(--ink-2)}
+.hist{display:flex;align-items:flex-end;gap:4px;height:64px;margin-top:18px}
+.hist span{flex:1;background:var(--line);border-radius:3px 3px 0 0;min-height:3px;cursor:pointer;transition:background .15s}
+.hist span:hover{background:var(--muted)}
+.hist span.on{background:var(--accent)}
+.hist-lb{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px}
+.frase{margin:16px 0 0;color:var(--ink-2);max-width:62ch}
+.frase b{color:var(--ink);font-weight:500}
+.quedas{padding:22px 24px}
+.quedas h2,.bloco h2{font-size:16px;font-weight:600;letter-spacing:-.01em;margin:0}
+.quedas .nota,.bloco .nota{color:var(--ink-2);font-size:13px;margin:2px 0 12px}
+.quedas ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.quedas li{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:9px 10px;border-radius:10px;cursor:pointer}
+.quedas li:hover{background:var(--sunk)}
+.quedas .pos{color:var(--muted);font-size:13px}
+.quedas .nm{font-weight:500}
+.quedas .det{font-size:12.5px;color:var(--ink-2)}
+.quedas .imp{color:var(--down);font-weight:500;text-align:right}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:1px 7px;border-radius:99px;background:var(--warn-soft);color:var(--warn);margin-left:6px;white-space:nowrap}
+.quedas li.vazio{display:block;cursor:default;color:var(--ink-2);font-size:14px;padding:12px 0}
+.quedas li.vazio:hover{background:none}
+/* blocos */
+.bloco{padding:20px 22px;margin-bottom:16px}
+.cab{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.tabs{display:inline-flex;background:var(--sunk);border-radius:10px;padding:3px;gap:2px}
+.tabs button{border:0;background:transparent;padding:6px 12px;border-radius:8px;font-size:13.5px;color:var(--ink-2);cursor:pointer;transition:background .2s,color .2s}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+/* barras divergentes */
+.div{display:grid;gap:3px;margin-top:6px}
+.drow{display:grid;grid-template-columns:minmax(110px,190px) 1fr 1fr;align-items:center;gap:0;height:30px;border-radius:8px;cursor:default}
+.drow:hover{background:var(--sunk)}
+.drow .n{font-size:13.5px;padding:0 12px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lado{position:relative;height:100%;display:flex;align-items:center}
+.lado.neg{justify-content:flex-end;border-right:1px solid var(--line)}
+.bar{flex:none;height:14px;transform-origin:left;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.neg .bar{background:var(--down);border-radius:4px 0 0 4px;transform-origin:right}
+.posi .bar{background:var(--up);border-radius:0 4px 4px 0}
+.lado .val{font-size:12px;color:var(--ink-2);padding:0 8px;white-space:nowrap}
+/* tabela */
+.tab-wrap{overflow-x:auto;margin:6px -6px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;text-align:right;white-space:nowrap}
+th.l,td.l{text-align:left}
+tbody tr{cursor:pointer;transition:background .15s}
+tbody tr:hover{background:var(--sunk)}
+tbody tr.sel{background:var(--accent-soft)}
+tbody tr+tr td{border-top:1px solid var(--sunk)}
+td.rank{color:var(--muted);width:34px}
+.part{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.part i{display:inline-block;height:6px;border-radius:3px;background:var(--accent);opacity:.75}
+.chip{display:inline-block;min-width:64px;text-align:right}
+.up{color:var(--up)} .down{color:var(--down)} .warn{color:var(--warn)}
+svg.spark{display:block;width:96px;height:26px;overflow:visible}
+.drill{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:3px 6px 3px 11px;border:0;cursor:pointer}
+.pill i{font-size:14px}
+footer{color:var(--muted);font-size:13px;margin-top:8px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13px;line-height:1.45;border-radius:9px;padding:8px 11px;opacity:0;transition:opacity .12s;z-index:5;white-space:nowrap}
+.so-m{display:none}
+@media (prefers-reduced-motion: reduce){.bar{transition:none}}
+@media (max-width:900px){.resumo{grid-template-columns:1fr}.top{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .hero{padding:20px}.hero .valor{font-size:36px}.quedas,.bloco{padding:18px 16px}
+  .drow{grid-template-columns:96px 1fr 1fr}
+  .lado .val{font-size:11px;padding:0 4px}
+  .hide-m{display:none}
+  .so-m{display:inline!important}
+  td.l:not(.rank){white-space:normal}
+  th,td{padding:8px 6px}
+  .rank{display:none}
+  .tab-wrap{margin:6px 0 0}
+  select{min-width:0;width:100%}.filtros{display:grid;grid-template-columns:1fr 1fr;width:100%}.filtros .campo:first-child{grid-column:1/-1}
+  .icon-btn{position:absolute;top:28px;right:16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap" style="position:relative">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">Pa</div>
+      <div>
+        <h1>Performance por categoria</h1>
+        <p class="sub">Supermercados Paineira, rede fictícia com 12 lojas</p>
+      </div>
+    </div>
+    <div class="filtros">
+      <div class="campo"><label for="fLoja">Lojas</label><select id="fLoja"></select></div>
+      <div class="campo"><label for="fMes">Mês</label><select id="fMes"></select></div>
+      <div class="campo"><label for="fComp">Comparar com</label><select id="fComp"></select></div>
+      <button class="icon-btn" id="tema" type="button" aria-label="Trocar tema"><i class="ph ph-circle-half"></i></button>
+    </div>
+  </header>
+
+  <section class="resumo">
+    <div class="painel hero" id="hero"></div>
+    <div class="painel quedas">
+      <h2>Quedas reais</h2>
+      <p class="nota">Subgrupos que caíram contra o mês anterior e contra o mesmo mês do ano passado. Clique para abrir.</p>
+      <ol id="quedas"></ol>
+    </div>
+  </section>
+
+  <section class="painel bloco">
+    <div class="cab">
+      <div>
+        <h2>De onde veio a variação</h2>
+        <p class="nota" id="nDiv"></p>
+      </div>
+      <div class="tabs" role="tablist" id="tabs"></div>
+    </div>
+    <div class="div" id="div"></div>
+  </section>
+
+  <section class="painel bloco">
+    <div class="cab">
+      <div>
+        <h2 id="tTab">Ranking</h2>
+        <p class="nota">Clique numa linha para ver os produtos.</p>
+      </div>
+    </div>
+    <div class="tab-wrap"><table id="tabela"></table></div>
+  </section>
+
+  <section class="painel bloco" id="blocoProd">
+    <div class="cab">
+      <div>
+        <h2>Produtos</h2>
+        <div class="drill" id="drill"></div>
+      </div>
+    </div>
+    <div class="tab-wrap"><table id="produtos"></table></div>
+  </section>
+
+  <footer>
+    <span>Dados inventados para demonstração.</span>
+    <span>Jonatas Menezes · Power BI, SQL e Python</span>
+  </footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+// ---------- dados fictícios (semente fixa: sempre os mesmos números) ----------
+let seed = 7341;
+const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+
+// seção > grupo > subgrupo: [nome, papel GC, peso, tendência anual, choque recente {meses, efeito, ruptura}]
+const HIER = [
+  ["Mercearia", [
+    ["Básicos", [["Arroz","Destino",1.5,.04],["Feijão","Destino",1.1,-.02],["Óleo","Rotina",.8,.06],["Açúcar","Rotina",.6,.01]]],
+    ["Matinais", [["Café","Destino",1.4,.08,{m:2,e:-.24,r:.17}],["Achocolatado","Rotina",.5,.03],["Cereais","Conveniência",.4,.09]]],
+    ["Massas e molhos", [["Macarrão","Rotina",.7,.02],["Molho de tomate","Rotina",.45,-.05,{m:2,e:-.09,r:.03}]]],
+  ]],
+  ["Bebidas", [
+    ["Não alcoólicas", [["Refrigerantes","Destino",1.3,-.07,{m:3,e:-.14,r:.02}],["Sucos","Rotina",.55,.05],["Água","Conveniência",.5,.12]]],
+    ["Alcoólicas", [["Cervejas","Destino",1.6,.06,{m:1,e:.12,r:.03}],["Vinhos","Sazonal",.5,.1]]],
+  ]],
+  ["Perecíveis", [
+    ["Laticínios", [["Leite","Destino",1.2,.03],["Iogurtes","Rotina",.6,.02,{m:2,e:-.2,r:.15}],["Queijos","Rotina",.7,.07]]],
+    ["Frios", [["Presunto","Rotina",.55,.01],["Embutidos","Rotina",.45,-.04]]],
+    ["Padaria", [["Pães","Destino",.9,.05],["Bolos","Conveniência",.35,.11]]],
+  ]],
+  ["Hortifruti", [
+    ["Frutas", [["Frutas da estação","Destino",.9,.04],["Banana","Rotina",.4,.02]]],
+    ["Legumes e verduras", [["Folhosas","Rotina",.35,-.03,{m:2,e:-.12,r:.05}],["Legumes","Rotina",.6,.03]]],
+  ]],
+  ["Limpeza", [
+    ["Roupa", [["Sabão em pó","Destino",.85,.02],["Amaciante","Rotina",.5,.06]]],
+    ["Casa", [["Desinfetantes","Rotina",.45,.04],["Detergentes","Rotina",.35,-.01]]],
+  ]],
+  ["Higiene", [
+    ["Cabelo", [["Shampoo","Rotina",.55,.05],["Condicionador","Conveniência",.4,.07]]],
+    ["Corpo", [["Sabonetes","Rotina",.4,.03],["Desodorantes","Rotina",.5,-.06,{m:2,e:-.1,r:.04}]]],
+    ["Bucal", [["Creme dental","Rotina",.45,.04]]],
+  ]],
+];
+const SAZ_SECAO = {
+  Mercearia:[1,.96,1.02,1,1.03,.98,1,1,.98,1.01,1.03,1.12],
+  Bebidas:[1.18,1.08,1,.92,.86,.82,.84,.9,.98,1.04,1.12,1.4],
+  Perecíveis:[1,.97,1,.99,1.02,1,1.01,1,.99,1,1.02,1.15],
+  Hortifruti:[1.05,1,1,.97,.95,.94,.95,.97,1,1.03,1.04,1.1],
+  Limpeza:[.98,.96,1.02,1,1.01,.99,1,1.01,.99,1,1.02,1.06],
+  Higiene:[1,.97,1,.99,1.04,.98,1,1.01,.99,1,1.03,1.1],
+};
+const LINHAS = ["linha econômica","linha tradicional","linha premium"];
+const LOJAS = ["Centro","Cambuí","Taquaral","Barão Geraldo","Sousas","Castelo","Bonfim","Guanabara","Nova Campinas","Flamboyant","Swift","Ouro Verde"];
+const REGIONAL = ["Regional Leste","Regional Leste","Regional Norte","Regional Norte","Regional Leste","Regional Oeste","Regional Oeste","Regional Norte","Regional Leste","Regional Oeste","Regional Norte","Regional Oeste"];
+const PESO_LOJA = LOJAS.map(() => .7 + rnd() * .6);
+const MESES_N = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const FIM = new Date(2026, 9, 1), N = 25; // nov/24 a out/26 + out/24 para comparar
+const meses = [...Array(N)].map((_, i) => new Date(FIM.getFullYear(), FIM.getMonth() - (N - 1 - i), 1));
+const nomeMes = i => MESES_N[meses[i].getMonth()] + "/" + String(meses[i].getFullYear()).slice(2);
+
+const SUBS = [], PRODS = [];
+HIER.forEach(([secao, grupos]) => grupos.forEach(([grupo, subs]) => subs.forEach(([nome, gc, peso, tend, choque]) => {
+  const s = { id: SUBS.length, secao, grupo, nome, gc, peso, tend, choque };
+  SUBS.push(s);
+  LINHAS.forEach((ln, k) => PRODS.push({ id: PRODS.length, sub: s.id, nome: `${nome} ${ln}`, peso: peso * [.45, .35, .2][k] * (.8 + rnd() * .4), tend: tend + (rnd() - .5) * .08 }));
+})));
+
+// venda[m][loja][produto] e ruptura[m][loja][subgrupo]
+const VENDA = [], RUPT = [];
+meses.forEach((d, mi) => {
+  const desdeFim = N - 1 - mi;
+  VENDA.push(LOJAS.map((_, li) => PRODS.map(p => {
+    const s = SUBS[p.sub], anos = (mi - (N - 1)) / 12;
+    let v = 21000 * p.peso * PESO_LOJA[li] * SAZ_SECAO[s.secao][d.getMonth()] * Math.pow(1 + p.tend, anos) * (.93 + rnd() * .14);
+    if (s.choque && desdeFim < s.choque.m) v *= 1 + s.choque.e * (desdeFim === 0 ? 1 : .35) * (s.choque.e < 0 && li % 3 === 0 ? 1.4 : 1);
+    return v;
+  })));
+  RUPT.push(LOJAS.map((_, li) => SUBS.map(s => {
+    let r = .025 + rnd() * .025;
+    if (s.choque && desdeFim < s.choque.m) r = s.choque.r * (li % 3 === 0 ? 1.4 : .9) + rnd() * .02;
+    return r;
+  })));
+});
+
+// ---------- formatação ----------
+const MENOS = "−";
+const brl = v => { const a = Math.abs(v), s = v < 0 ? MENOS : "";
+  if (a >= 1e6) return s + "R$ " + (a / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "M";
+  if (a >= 1e3) return s + "R$ " + Math.round(a / 1e3).toLocaleString("pt-BR") + "k";
+  return s + "R$ " + Math.round(a).toLocaleString("pt-BR"); };
+const brlS = v => (Math.round(v / 1000) > 0 ? "+" : "") + brl(v);
+const pct = (v, c = 1) => { const r = Math.round(v * 100 * 10 ** c) / 10 ** c; return (r > 0 ? "+" : r < 0 ? MENOS : "") + Math.abs(r).toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c }) + "%"; };
+const pAbs = (v, c = 1) => (v * 100).toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c }) + "%";
+const cor = v => v >= 0 ? "up" : "down";
+
+// ---------- estado ----------
+const st = { lojas: null, mes: N - 1, comp: "mom", nivel: "grupo", drill: null };
+const NIVEIS = { secao: "Seção", grupo: "Grupo", sub: "Subgrupo", gc: "Papel da categoria" };
+const chave = { secao: s => s.secao, grupo: s => s.grupo, sub: s => s.nome, gc: s => s.gc };
+const mesComp = () => st.comp === "mom" ? st.mes - 1 : st.mes - 12;
+
+function lojasAtivas() { return st.lojas || LOJAS.map((_, i) => i); }
+function vendaSub(mi) { // soma por subgrupo
+  const out = new Array(SUBS.length).fill(0);
+  lojasAtivas().forEach(li => VENDA[mi][li].forEach((v, pi) => out[PRODS[pi].sub] += v));
+  return out;
+}
+function vendaProd(mi) { const out = new Array(PRODS.length).fill(0); lojasAtivas().forEach(li => VENDA[mi][li].forEach((v, pi) => out[pi] += v)); return out; }
+function ruptSub(mi) { // média ponderada simples por loja
+  const ls = lojasAtivas(); return SUBS.map(s => ls.reduce((a, li) => a + RUPT[mi][li][s.id], 0) / ls.length);
+}
+function agrupa(arr, nivel, f = (a, b) => a + b) {
+  const m = new Map(); SUBS.forEach(s => { const k = chave[nivel](s); m.set(k, f(m.get(k) || 0, arr[s.id])); }); return m;
+}
+
+// ---------- tooltip ----------
+const tip = document.getElementById("tip");
+function dica(el, html) {
+  el.addEventListener("mousemove", ev => { tip.innerHTML = html(); tip.style.opacity = 1;
+    const r = tip.getBoundingClientRect(); let x = ev.pageX + 14, y = ev.pageY + 14;
+    if (ev.clientX + r.width + 24 > innerWidth) x = ev.pageX - r.width - 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px"; });
+  el.addEventListener("mouseleave", () => tip.style.opacity = 0);
+}
+
+// ---------- filtros ----------
+const fLoja = document.getElementById("fLoja"), fMes = document.getElementById("fMes"), fComp = document.getElementById("fComp");
+const regs = [...new Set(REGIONAL)];
+fLoja.innerHTML = `<option value="all">Toda a rede</option>` +
+  regs.map(r => `<optgroup label="${r}"><option value="r:${r}">${r} (todas)</option>` + LOJAS.map((l, i) => REGIONAL[i] === r ? `<option value="l:${i}">${l}</option>` : "").join("") + `</optgroup>`).join("");
+fMes.innerHTML = [...Array(12)].map((_, k) => { const i = N - 1 - k; return `<option value="${i}">${nomeMes(i)}</option>`; }).join("");
+function compOpts() { fComp.innerHTML = `<option value="mom">Mês anterior</option><option value="yoy">Mesmo mês do ano anterior</option>`; fComp.value = st.comp; }
+fLoja.onchange = () => { const v = fLoja.value; st.lojas = v === "all" ? null : v.startsWith("r:") ? LOJAS.map((_, i) => i).filter(i => REGIONAL[i] === v.slice(2)) : [+v.slice(2)]; render(); };
+fMes.onchange = () => { st.mes = +fMes.value; compOpts(); render(); };
+fComp.onchange = () => { st.comp = fComp.value; render(); };
+const tabs = document.getElementById("tabs");
+tabs.innerHTML = Object.entries(NIVEIS).map(([k, n]) => `<button role="tab" data-n="${k}"><span class="${k === "gc" ? "hide-m" : ""}">${n}</span>${k === "gc" ? `<span class="so-m">Papel</span>` : ""}</button>`).join("");
+tabs.onclick = e => { const b = e.target.closest("button"); if (!b) return; st.nivel = b.dataset.n; render(); };
+document.getElementById("tema").onclick = () => { const r = document.documentElement;
+  const escuro = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; r.dataset.theme = escuro ? "light" : "dark"; };
+
+// ---------- render ----------
+function render() {
+  const m = st.mes, c = mesComp();
+  const vA = vendaSub(m), vM = vendaSub(m - 1), vY = vendaSub(m - 12), vC = st.comp === "mom" ? vM : vY, rA = ruptSub(m);
+  const tot = a => a.reduce((x, y) => x + y, 0);
+  const T = tot(vA), TM = tot(vM), TY = tot(vY), TC = tot(vC);
+  const escopo = !st.lojas ? "A rede" : st.lojas.length === 1 ? "A loja " + LOJAS[st.lojas[0]] : "A " + REGIONAL[st.lojas[0]];
+
+  // ranking por subgrupo para frase e quedas
+  const subs = SUBS.map(s => ({ s, a: vA[s.id], mom: vA[s.id] / vM[s.id] - 1, yoy: vA[s.id] / vY[s.id] - 1, imp: vA[s.id] - vM[s.id], r: rA[s.id] }));
+  const reais = subs.filter(x => x.mom < -.02 && x.yoy < -.02).sort((a, b) => a.imp - b.imp).slice(0, 5);
+  const ganho = [...subs].sort((a, b) => b.imp - a.imp)[0];
+  const perdaR = reais.reduce((a, x) => a + x.imp, 0);
+
+  document.getElementById("hero").innerHTML = `
+    <div class="mes">${escopo} vendeu em ${nomeMes(m)}</div>
+    <div class="valor num">${brl(T)}</div>
+    <div class="comp">
+      <div><div class="lb">Contra ${nomeMes(m - 1)}</div><div class="v num ${cor(T / TM - 1)}">${pct(T / TM - 1)}</div><div class="rs num">${brlS(T - TM)}</div></div>
+      <div><div class="lb">Contra ${nomeMes(m - 12)}</div><div class="v num ${cor(T / TY - 1)}">${pct(T / TY - 1)}</div><div class="rs num">${brlS(T - TY)}</div></div>
+    </div>
+    <div class="hist" id="hist"></div><div class="hist-lb"><span>${nomeMes(m - 12)}</span><span>Últimos 13 meses</span><span>${nomeMes(m)}</span></div>
+    <p class="frase">${reais.length ? `As ${reais.length} quedas reais tiraram <b>${brl(-perdaR)}</b> do mês. ` : "Nenhum subgrupo caiu nas duas comparações. "}O maior ganho foi <b>${ganho.s.nome}</b>, com <b>${brlS(ganho.imp)}</b> contra ${nomeMes(m - 1)}.</p>`;
+
+  const tots = [...Array(13)].map((_, j) => tot(vendaSub(m - 12 + j))), mxT = Math.max(...tots), mnT = Math.min(...tots) * .9;
+  const hEl = document.getElementById("hist");
+  hEl.innerHTML = tots.map((v, j) => `<span class="${j === 12 ? "on" : ""}" style="height:${(v - mnT) / (mxT - mnT) * 100}%"></span>`).join("");
+  [...hEl.children].forEach((b, j) => { dica(b, () => `<b>${nomeMes(m - 12 + j)}</b><br>${brl(tots[j])}`); if (m - 12 + j >= N - 12) b.onclick = () => { st.mes = m - 12 + j; fMes.value = st.mes; compOpts(); render(); }; });
+  const ol = document.getElementById("quedas");
+  ol.innerHTML = reais.length ? reais.map((x, i) => `<li data-sub="${x.s.id}" tabindex="0">
+      <span class="pos num">${i + 1}</span>
+      <span><span class="nm">${x.s.nome}</span>${x.r >= .08 ? `<span class="tag"><i class="ph ph-package"></i>falta de estoque ${pAbs(x.r, 0)}</span>` : ""}<br>
+      <span class="det num">${pct(x.mom)} no mês · ${pct(x.yoy)} no ano</span></span>
+      <span class="imp num">${brl(x.imp)}</span></li>`).join("")
+    : `<li class="vazio">Nenhum subgrupo caiu nas duas comparações neste mês.</li>`;
+  ol.querySelectorAll("li[data-sub]").forEach(li => { const abrir = () => { st.drill = { nivel: "sub", nome: SUBS[+li.dataset.sub].nome }; render(); document.getElementById("blocoProd").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }; li.onclick = abrir; li.onkeydown = e => e.key === "Enter" && abrir(); });
+
+  // tabs
+  tabs.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.n === st.nivel));
+
+  // variação por nível
+  const gA = agrupa(vA, st.nivel), gC = agrupa(vC, st.nivel), gR = agrupa(rA.map((r, i) => r * vA[i]), st.nivel);
+  let itens = [...gA.keys()].map(k => ({ k, a: gA.get(k), c: gC.get(k), imp: gA.get(k) - gC.get(k), r: gR.get(k) / gA.get(k) }));
+  let dv = [...itens].sort((a, b) => b.imp - a.imp);
+  if (dv.length > 14) dv = [...dv.slice(0, 7), ...dv.slice(-7)];
+  const maxI = Math.max(...dv.map(x => Math.abs(x.imp)));
+  document.getElementById("nDiv").textContent = `Diferença em reais de cada ${NIVEIS[st.nivel].toLowerCase()} contra ${nomeMes(c)}. Total: ${brlS(T - TC)}.` + (itens.length > 14 ? " Mostrando as 7 maiores altas e as 7 maiores quedas." : "");
+  const div = document.getElementById("div");
+  div.innerHTML = dv.map(x => { const w = Math.abs(x.imp) / maxI * 78;
+    return `<div class="drow"><span class="n">${x.k}</span>
+      <span class="lado neg">${x.imp < 0 ? `<span class="val num">${brl(x.imp)}</span><span class="bar" style="width:${w}%;transform:scaleX(0)"></span>` : ""}</span>
+      <span class="lado posi">${x.imp >= 0 ? `<span class="bar" style="width:${w}%;transform:scaleX(0)"></span><span class="val num">${brlS(x.imp)}</span>` : ""}</span></div>`; }).join("");
+  [...div.children].forEach((row, i) => dica(row, () => { const x = dv[i]; return `<b>${x.k}</b><br>${nomeMes(m)}: ${brl(x.a)}<br>${nomeMes(c)}: ${brl(x.c)}<br>${pct(x.a / x.c - 1)} · ${brlS(x.imp)}`; }));
+  requestAnimationFrame(() => div.querySelectorAll(".bar").forEach(b => b.style.transform = "scaleX(1)"));
+
+  // tabela ranking
+  document.getElementById("tTab").textContent = `Ranking por ${NIVEIS[st.nivel].toLowerCase()}`;
+  itens.sort((a, b) => b.a - a.a);
+  const hist = k => [...Array(12)].map((_, j) => { const mi = m - 11 + j; return agrupa(vendaSub(mi), st.nivel).get(k); });
+  const maxP = Math.max(...itens.map(x => x.a / T));
+  document.getElementById("tabela").innerHTML = `<thead><tr><th class="l rank">#</th><th class="l">${NIVEIS[st.nivel]}</th><th>Venda ${nomeMes(m)}</th><th class="hide-m">${nomeMes(c)}</th><th>Variação</th><th class="hide-m">Participação</th><th class="hide-m">Ruptura</th><th class="hide-m">12 meses</th></tr></thead><tbody>` +
+    itens.map((x, i) => { const v = x.a / x.c - 1, p = x.a / T, sel = st.drill && st.drill.nivel === st.nivel && st.drill.nome === x.k;
+      return `<tr data-k="${x.k}" tabindex="0" class="${sel ? "sel" : ""}"><td class="l rank num">${i + 1}</td><td class="l">${x.k}</td><td class="num">${brl(x.a)}</td><td class="num hide-m" style="color:var(--ink-2)">${brl(x.c)}</td>
+        <td class="num"><span class="chip ${cor(v)}">${pct(v)}</span></td>
+        <td class="num hide-m"><span class="part">${pAbs(p)}<i style="width:${p / maxP * 56}px"></i></span></td>
+        <td class="num hide-m ${x.r >= .08 ? "warn" : ""}" style="${x.r < .08 ? "color:var(--ink-2)" : ""}">${pAbs(x.r)}</td>
+        <td class="hide-m">${spark(hist(x.k))}</td></tr>`; }).join("") + `</tbody>`;
+  document.querySelectorAll("#tabela tbody tr").forEach(tr => { const abrir = () => { st.drill = { nivel: st.nivel, nome: tr.dataset.k }; render(); }; tr.onclick = abrir; tr.onkeydown = e => e.key === "Enter" && abrir(); });
+
+  // produtos
+  const pA = vendaProd(m), pC = vendaProd(c);
+  let prods = PRODS.filter(p => !st.drill || chave[st.drill.nivel](SUBS[p.sub]) === st.drill.nome)
+    .map(p => ({ p, a: pA[p.id], c: pC[p.id] })).sort((x, y) => y.a - x.a).slice(0, 12);
+  document.getElementById("drill").innerHTML = st.drill
+    ? `<span class="nota" style="margin:0">${NIVEIS[st.drill.nivel]}:</span><button class="pill" id="limpa">${st.drill.nome}<i class="ph ph-x" aria-label="Limpar"></i></button>`
+    : `<p class="nota" style="margin:2px 0 0">Os 12 que mais venderam em ${nomeMes(m)}. Clique numa categoria acima para filtrar.</p>`;
+  const lp = document.getElementById("limpa"); if (lp) lp.onclick = () => { st.drill = null; render(); };
+  const TP = prods.reduce((a, x) => a + x.a, 0);
+  document.getElementById("produtos").innerHTML = `<thead><tr><th class="l rank">#</th><th class="l">Produto</th><th class="l hide-m">Subgrupo</th><th>Venda ${nomeMes(m)}</th><th class="hide-m">${nomeMes(c)}</th><th>Variação</th><th class="hide-m">Impacto</th></tr></thead><tbody>` +
+    prods.map((x, i) => { const v = x.a / x.c - 1; return `<tr style="cursor:default"><td class="l rank num">${i + 1}</td><td class="l">${x.p.nome}</td><td class="l hide-m" style="color:var(--ink-2)">${SUBS[x.p.sub].nome}</td>
+      <td class="num">${brl(x.a)}</td><td class="num hide-m" style="color:var(--ink-2)">${brl(x.c)}</td><td class="num"><span class="chip ${cor(v)}">${pct(v)}</span></td><td class="num hide-m ${cor(x.a - x.c)}">${brlS(x.a - x.c)}</td></tr>`; }).join("") + `</tbody>`;
+}
+function spark(vals) {
+  const w = 96, h = 26, mx = Math.max(...vals), mn = Math.min(...vals), rg = mx - mn || 1;
+  const pts = vals.map((v, i) => [i / (vals.length - 1) * w, h - 3 - (v - mn) / rg * (h - 6)]);
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity=".85"/><circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="var(--accent)"/></svg>`;
+}
+compOpts();
+render();
+</script>
+</body>
+</html>
